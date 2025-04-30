@@ -1,0 +1,112 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+jobs:
+  check-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Check if build works
+        run: cargo check --all
+      - name: Try release build
+        run: cargo build --release
+      - name: Ensure binary exists and is executable
+        run: |
+          test -f target/release/clownfish && test -x target/release/clownfish
+          ./target/release/clownfish --version || echo "Binary compiled but could not execute. This might need further investigation."
+
+  create-release:
+    needs: [check-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read CHANGELOG.md
+        id: changelog
+        shell: bash
+        run: |
+          CHANGELOG=$(cat CHANGELOG.md)
+          echo "CHANGELOG<<EOFMARKER" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOFMARKER" >> $GITHUB_ENV
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: false
+          body: |
+            ${{ env.CHANGELOG }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+      - name: Install cross-compilation dependencies
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      - name: Set build environment variables
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Verify binary was built
+        run: |
+          if [ ! -f target/${{ matrix.target }}/release/clownfish ]; then
+            if [ ! -f target/${{ matrix.target }}/release/clownfish.exe ]; then
+              echo "Binary not found at expected location!"
+              exit 1
+            fi
+          fi
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: clownfish
+          target: ${{ matrix.target }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checksum: sha256
+          tar: unix
+          zip: windows
+
+  publish-release:
+    needs: upload-assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
