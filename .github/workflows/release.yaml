@@ -120,7 +120,7 @@ jobs:
           fi
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: target/${{ matrix.target }}/release/clownfish
+          bin: clownfish
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
           checksum: sha256
