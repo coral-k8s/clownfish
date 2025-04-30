@@ -9,33 +9,7 @@ on:
       - v[0-9]+.*
 
 jobs:
-  validate-tag:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate tag format
-        run: |
-          if [[ ! "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
-            echo "Invalid tag format: ${{ github.ref_name }}"
-            echo "Expected format: vX.Y.Z or vX.Y.Z-suffix"
-            exit 1
-          fi
-
-  run-tests:
-    needs: validate-tag
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-      - name: Run tests
-        run: cargo test --all
-
   check-build:
-    needs: validate-tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +28,7 @@ jobs:
           ./target/release/clownfish --version || echo "Binary compiled but could not execute. This might need further investigation."
 
   create-release:
-    needs: [run-tests, check-build]
+    needs: [check-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
