@@ -58,21 +58,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Generate changelog
+      - name: Read CHANGELOG.md
         id: changelog
+        shell: bash
         run: |
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          CHANGELOG=$(cat CHANGELOG.md)
+          echo "CHANGELOG<<EOFMARKER" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOFMARKER" >> $GITHUB_ENV
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          generate_release_notes: true
+          generate_release_notes: false
           body: |
-            ## Changelog
             ${{ env.CHANGELOG }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
