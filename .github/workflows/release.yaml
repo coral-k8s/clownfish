@@ -17,8 +17,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 
-            
+          toolchain: stable
+
       - name: Check if build works
         run: cargo check --all
       - name: Try release build
@@ -28,8 +28,22 @@ jobs:
           test -f target/release/clownfish && test -x target/release/clownfish
           ./target/release/clownfish --version || echo "Binary compiled but could not execute. This might need further investigation."
 
+  check-release-type:
+    runs-on: ubuntu-latest
+    outputs:
+      is_prerelease: ${{ steps.check_tag.outputs.is_prerelease }}
+    steps:
+      - name: Check tag type
+        id: check_tag
+        run: |
+          if [[ "${{ github.ref_name }}" =~ -rc|-alpha|-beta|dev ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
   create-release:
-    needs: [check-build]
+    needs: [check-build, check-release-type]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +59,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
+          prerelease: ${{ needs.check-release-type.outputs.is_prerelease }}
           generate_release_notes: false
           body: |
             ${{ env.CHANGELOG }}
@@ -101,7 +116,7 @@ jobs:
           zip: windows
 
   publish-release:
-    needs: upload-assets
+    needs: [upload-assets, check-release-type]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,5 +124,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: false
+          prerelease: ${{ needs.check-release-type.outputs.is_prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ github.ref_name }}
