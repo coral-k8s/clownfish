@@ -77,10 +77,9 @@ jobs:
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y libx11-dev:arm64 libxcb1-dev:arm64 libxcb-render0-dev:arm64 libxcb-shape0-dev:arm64 libxcb-xfixes0-dev:arm64 libxkbcommon-dev:arm64 libxkbcommon-x11-dev:arm64 libxcb-xkb-dev:arm64 libx11-xcb-dev:arm64
           echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
           echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          # Setting up cross-compilation environment without requiring arm64 packages
-          # that may not be available in the repository
       - name: Build binary
         run: cargo build --release --target ${{ matrix.target }}
       - name: Verify binary was built
