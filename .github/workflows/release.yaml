@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     tags:
-      - v[0-9]+.*
+      - v[0-9]+.*$
 
 jobs:
   check-release-type:
@@ -72,7 +72,7 @@ jobs:
         if: contains(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libx11-dev libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev pkg-config
+          sudo apt-get install -y libx11-dev libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb-xkb-dev libx11-xcb-dev
       - name: Setup for cross-compilation
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
