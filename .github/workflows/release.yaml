@@ -84,9 +84,15 @@ jobs:
       - name: Build binary
         run: cargo build --release --target ${{ matrix.target }}
       - name: Verify binary was built
+        shell: bash
         run: |
-          if [ ! -f target/${{ matrix.target }}/release/clownfish ]; then
-            if [ ! -f target/${{ matrix.target }}/release/clownfish.exe ]; then
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            if [ ! -f "target/${{ matrix.target }}/release/clownfish.exe" ]; then
+              echo "Binary not found at expected location!"
+              exit 1
+            fi
+          else
+            if [ ! -f "target/${{ matrix.target }}/release/clownfish" ]; then
               echo "Binary not found at expected location!"
               exit 1
             fi
