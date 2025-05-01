@@ -19,6 +19,11 @@ jobs:
           profile: minimal
           toolchain: stable
 
+      - name: Install X11 and other dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev pkg-config
+
       - name: Check if build works
         run: cargo check --all
       - name: Try release build
@@ -87,6 +92,11 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
+      - name: Install Linux dependencies
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev pkg-config
       - name: Install cross-compilation dependencies
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
