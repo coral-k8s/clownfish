@@ -17,7 +17,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: 
+            
       - name: Check if build works
         run: cargo check --all
       - name: Try release build
