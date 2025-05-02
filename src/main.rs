@@ -8,5 +8,5 @@ fn main() {
 
     app.run(move |cx| {
         cx.activate(true);
-    })
+    });
 }
